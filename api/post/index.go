@@ -6,13 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 发布贴文
+// AddPost 发布贴文
 func AddPost(c *gin.Context) {
-	user_id := c.Param("userId")
+	//user_id := c.Param("userId")
 	post := model.Post{}
 	c.BindJSON(&post)
 	//校验
-	if user_id == "" || post.Title == nil || post.Content == nil {
+	if post.UserId == nil || post.Title == nil || post.Content == nil {
 		c.JSON(400, gin.H{
 			"success": 0,
 			"message": "发布帖子失败，必传参数不能为空"})
@@ -20,7 +20,7 @@ func AddPost(c *gin.Context) {
 	}
 	//新增
 	_, err := config.DbConn.Exec("insert into post(user_id,title,content) "+
-		"values(?,?,?);", user_id, post.Title, post.Content)
+		"values(?,?,?);", post.UserId, post.Title, post.Content)
 	if err != nil {
 		panic(err.Error())
 		return
@@ -30,23 +30,20 @@ func AddPost(c *gin.Context) {
 		"message": "数据添加成功"})
 }
 
-// 贴文详情
-func GetPostInfo(c *gin.Context) {
+// GetPost 贴文详情
+func GetPost(c *gin.Context) {
 	post := model.Post{}
 	user := model.User{}
-	post_id := c.Param("postId")
-	user_id := c.Param("userId")
+	postId := c.Param("id")
 
-	if post_id == "" || user_id == "" {
+	if postId == "" {
 		println("用户或贴文id不能为空")
 		return
 	}
 
-	rows, err := config.DbConn.Query("select post.id,post.title,post.content,post.user_id,user.nick_name "+
-		"from post left join user on post.user_id = user.id where post.id = (?) and post.user_id=(?);",
-		post_id, user_id)
-
-	defer rows.Close()
+	rows, err := config.DbConn.Query("select post.id,post.title,post.content,post.user_id,"+
+		"post.create_time,user.nick_name "+
+		"from post left join user on post.user_id = user.id where post.id = (?)", postId)
 
 	if err != nil {
 		println("数据库查询错误", err.Error())
@@ -54,8 +51,8 @@ func GetPostInfo(c *gin.Context) {
 	}
 
 	if rows.Next() {
-		err := rows.Scan(post.Id, post.Title, post.Content, post.UserId, user.NickName)
-		if err == nil {
+		err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.UserId, &post.CreateTime, &user.NickName)
+		if err != nil {
 			println("数据返回错误", err.Error())
 			return
 		}
@@ -63,11 +60,15 @@ func GetPostInfo(c *gin.Context) {
 			"success": 1,
 			"message": "成功获取贴文",
 			"data": gin.H{
-				"id":          post_id,
+				"id":          postId,
 				"title":       post.Title,
 				"content":     post.Content,
 				"user_id":     post.UserId,
 				"create_time": post.CreateTime}})
+	} else {
+		c.JSON(200, gin.H{
+			"success": 0,
+			"message": "未查到该数据"})
 	}
 }
 
@@ -75,25 +76,27 @@ func GetPostInfo(c *gin.Context) {
 func GetPostsByUser(c *gin.Context) {
 	//user := model.User{}
 	post := model.Post{}
+	userId := c.Param("userId")
 
-	user_id := c.Param("user_id")
-	if user_id == "" {
+	if userId == "" {
 		println("用户Id不能为空")
 		return
+	} else {
+		println("用户有id")
 	}
-	rows, err := config.DbConn.Query("select post.id,post.title,post.content from post where"+
-		"post.user_id = (?)", user_id)
-	defer rows.Close()
+
+	rows, err := config.DbConn.Query("select post.id,post.title,post.content from post where post.user_id=(?);", userId)
+
 	if err != nil {
 		println("数据库查询错误", err.Error())
-		return
 	}
+
 	var list []interface{}
+
 	for rows.Next() {
-		err := rows.Scan(post.Id, post.Title, post.Content)
+		err := rows.Scan(&post.Id, &post.Title, &post.Content)
 		if err != nil {
-			println("用户Id不能为空")
-			return
+			println(err.Error())
 		}
 		if post.Id != nil {
 			list = append(list, gin.H{
@@ -103,6 +106,7 @@ func GetPostsByUser(c *gin.Context) {
 			})
 		}
 	}
+
 	c.JSON(200, gin.H{
 		"success": 1,
 		"message": "用户贴文列表请查收~",

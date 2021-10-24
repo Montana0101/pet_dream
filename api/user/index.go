@@ -42,7 +42,7 @@ func GetUser(c *gin.Context) {
 	rows, err := config.DbConn.Query("select user.id,user.nick_name,user.real_name,user.age,"+
 		"user.gender,user.latitude,user.longitude,user.identity_id,"+
 		"pet.name,pet.id from user left join pet "+
-		"on user.id = pet.user_id where user.id = (?);", userId)
+		"on user.id = pet.user_id where user.id = (?) and pet.visible=1;", userId)
 
 	defer rows.Close()
 
@@ -62,7 +62,6 @@ func GetUser(c *gin.Context) {
 			log.Panic(err.Error())
 			return
 		}
-		fmt.Printf("打印下返回数据长度")
 		//是否有宠物
 		if pet.Id != nil {
 			l = append(l, gin.H{
