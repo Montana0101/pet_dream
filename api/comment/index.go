@@ -32,7 +32,6 @@ func GetCommentsByPost(c *gin.Context) {
 	postId := c.Param("id")
 	rows, err := config.DbConn.Query("select comment.id,comment.content,comment.create_time "+
 		"from comment where comment.post_id = ?;", postId)
-	//.Scan(&comment.Id, &comment.Content,&comment.CreateTime)
 	if err != nil {
 		println(err.Error())
 	}

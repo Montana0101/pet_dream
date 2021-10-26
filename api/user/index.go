@@ -3,33 +3,74 @@ package user
 import (
 	"community/config"
 	"community/internal/model"
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"log"
+	"net/http"
 )
 
 func AddUser(c *gin.Context) {
 	user := model.User{}
 	c.BindJSON(&user)
-	//校验昵称
-	if user.NickName == "" {
-		fmt.Println("添加用户失败*_*")
+
+	if user.Code == "" {
+		println("未收到code")
 		return
 	}
-	//插入数据
-	_, err := config.DbConn.Exec("insert into user(nick_name) values(?);", user.NickName)
-	if err != nil {
-		log.Panic(err.Error())
+
+	response, err := http.Get("https://api.weixin.qq.com/sns/jscode2session?appid=" + config.Appid +
+		"&secret=" + config.Secret + "&js_code=" + user.Code + "&grant_type=authorization_code")
+	if err != nil || response.StatusCode != http.StatusOK {
+		c.Status(http.StatusServiceUnavailable)
 		return
 	}
-	fmt.Println("添加了一条用户数据~")
-	c.JSON(200, gin.H{
-		"status":  "200",
-		"message": "创建用户成功",
-		"data": gin.H{
-			"nickname": user.NickName,
-		},
-	})
+	reader, err := ioutil.ReadAll(response.Body)
+
+	var wechatLogin model.WechatLogin
+	if err := json.Unmarshal([]byte(reader), &wechatLogin); err == nil {
+		fmt.Println("==============json str 转map=======================")
+		fmt.Println(string(reader))
+		fmt.Println(wechatLogin)
+	}
+
+	if wechatLogin.Errcode == 0 && wechatLogin.Openid != "" {
+		c.JSON(200, gin.H{
+			"success": 1,
+			"message": "授权登陆成功",
+			"data": gin.H{
+				//"nickname": json.,
+				"dsandsa": wechatLogin,
+			},
+		})
+		// 查找该用户是否已注册
+		rows, err := config.DbConn.Query("select * from user where openid = ?;", wechatLogin.Openid)
+		if err != nil {
+			println(err.Error())
+		}
+		if rows.Next() {
+			println("已经注册过了")
+		} else {
+			// 尚未注册
+			println("还没注册")
+			//插入数据
+			_, err := config.DbConn.Exec("insert into user(openid) values(?);", wechatLogin.Openid)
+			if err != nil {
+				println(err.Error())
+			}
+			println("数据插入成功")
+		}
+	} else {
+		c.JSON(200, gin.H{
+			"success": 0,
+			"message": "授权登陆失败",
+			"data": gin.H{
+				//"nickname": json.,
+				"dsandsa": wechatLogin,
+			},
+		})
+	}
 }
 
 // 获取用户信息
@@ -40,7 +81,7 @@ func GetUser(c *gin.Context) {
 		return
 	}
 	rows, err := config.DbConn.Query("select user.id,user.nick_name,user.real_name,user.age,"+
-		"user.gender,user.latitude,user.longitude,user.identity_id,"+
+		"user.gender,user.latitude,user.longitude,user.identity,"+
 		"pet.name,pet.id from user left join pet "+
 		"on user.id = pet.user_id where user.id = (?) and pet.visible=1;", userId)
 
@@ -56,7 +97,7 @@ func GetUser(c *gin.Context) {
 	for rows.Next() {
 
 		err := rows.Scan(&user.Id, &user.NickName, &user.RealName, &user.Age,
-			&user.Gender, &user.Latitude, &user.Longitude, &user.IdentityId,
+			&user.Gender, &user.Latitude, &user.Longitude, &user.Identity,
 			&pet.Name, &pet.Id)
 		if err != nil {
 			log.Panic(err.Error())
@@ -74,14 +115,14 @@ func GetUser(c *gin.Context) {
 		"status":  "200",
 		"message": "创建用户成功",
 		"data": gin.H{
-			"user_id":     user.Id,
-			"nick_name":   user.NickName,
-			"real_name":   user.RealName,
-			"age":         user.Age,
-			"latitude":    user.Latitude,
-			"longitude":   user.Longitude,
-			"identity_id": user.IdentityId,
-			"pet":         l,
+			"user_id":   user.Id,
+			"nick_name": user.NickName,
+			"real_name": user.RealName,
+			"age":       user.Age,
+			"latitude":  user.Latitude,
+			"longitude": user.Longitude,
+			"identity":  user.Identity,
+			"pet":       l,
 		},
 	})
 }
