@@ -1,4 +1,4 @@
-package post
+package v1
 
 import (
 	"community/config"

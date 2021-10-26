@@ -1,4 +1,4 @@
-package media
+package v1
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package user
+package v1
 
 import (
 	"community/config"
@@ -39,10 +39,7 @@ func AddUser(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"success": 1,
 			"message": "授权登陆成功",
-			"data": gin.H{
-				//"nickname": json.,
-				"dsandsa": wechatLogin,
-			},
+			"data":    wechatLogin,
 		})
 		// 查找该用户是否已注册
 		rows, err := config.DbConn.Query("select * from user where openid = ?;", wechatLogin.Openid)
@@ -55,7 +52,8 @@ func AddUser(c *gin.Context) {
 			// 尚未注册
 			println("还没注册")
 			//插入数据
-			_, err := config.DbConn.Exec("insert into user(openid) values(?);", wechatLogin.Openid)
+			_, err := config.DbConn.Exec("insert into user(openid,nick_name,avatar_url) values(?,?,?);",
+				wechatLogin.Openid, user.NickName, user.AvatarUrl)
 			if err != nil {
 				println(err.Error())
 			}
@@ -65,11 +63,39 @@ func AddUser(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"success": 0,
 			"message": "授权登陆失败",
-			"data": gin.H{
-				//"nickname": json.,
-				"dsandsa": wechatLogin,
-			},
+			"data":    wechatLogin,
 		})
+	}
+}
+
+// 记录地址信息
+func PutLocation(c *gin.Context) {
+	user := model.User{}
+	c.BindJSON(&user)
+	if user.Longitude == nil || user.Latitude == nil || user.City == nil || user.Openid == nil {
+		println("缺少必要参数")
+		return
+	}
+	rows, err := config.DbConn.Exec("update user set longitude=?,latitude=?,city=? "+
+		"where openid = ?;",
+		user.Longitude, user.Latitude, user.City, user.Openid)
+	if err != nil {
+		println(err.Error())
+	}
+
+	result, err := rows.RowsAffected()
+	if err != nil {
+		println(err.Error())
+	}
+
+	if result == 1 {
+		c.JSON(200, gin.H{
+			"success": 1,
+			"message": "叮 ! 用户地址已变更 ≧◠◡◠≦"})
+	} else {
+		c.JSON(200, gin.H{
+			"success": 0,
+			"message": "哇 ! 用户地址变更失败（┬＿┬）"})
 	}
 }
 

@@ -12,4 +12,6 @@ type User struct {
 	Latitude  *float64 `json:"latitude"`
 	Openid    *string  `json:"openid"`
 	Code      string   `json:"code"`
+	City      *string  `json:"city"`
+	AvatarUrl *string  `json:"avatar_url"`
 }

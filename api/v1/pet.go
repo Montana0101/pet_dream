@@ -1,4 +1,4 @@
-package pet
+package v1
 
 import (
 	"community/config"
