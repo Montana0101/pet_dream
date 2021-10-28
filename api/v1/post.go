@@ -74,7 +74,6 @@ func GetPost(c *gin.Context) {
 
 // 用户关联的贴文列表
 func GetPostsByUser(c *gin.Context) {
-	//user := model.User{}
 	post := model.Post{}
 	userId := c.Param("userId")
 
@@ -110,6 +109,51 @@ func GetPostsByUser(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"success": 1,
 		"message": "用户贴文列表请查收~",
+		"data":    list,
+	})
+}
+
+// 首页推荐推文
+func RecommendPost(c *gin.Context) {
+	post := model.Post{}
+	user := model.User{}
+	city := c.Param("city")
+	//userId := c.Param("userId")
+	if city == "" {
+		println("城市为空")
+		//return
+	} else {
+		println("用户有id")
+	}
+
+	rows, err := config.DbConn.Query("select user.id,user.nick_name,post.id,post.title,post.content from user left join post "+
+		"on post.user_id = user.id where user.city = ?;", city)
+
+	if err != nil {
+		println("数据库查询错误", err.Error())
+	}
+
+	var list []interface{}
+
+	for rows.Next() {
+		err := rows.Scan(&user.Id, &user.NickName, &post.Id, &post.Title, &post.Content)
+		if err != nil {
+			println(err.Error())
+		}
+		if post.Id != nil {
+			list = append(list, gin.H{
+				"userId":   user.Id,
+				"nickname": user.NickName,
+				"postId":   post.Id,
+				"title":    post.Title,
+				"content":  post.Content,
+			})
+		}
+	}
+
+	c.JSON(200, gin.H{
+		"success": 1,
+		"message": city + "的贴文列表请查收~",
 		"data":    list,
 	})
 }

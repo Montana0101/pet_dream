@@ -18,6 +18,7 @@ func Handlers(e *gin.Engine) {
 
 	e.POST("/v1/post", v1.AddPost)                       // 发布贴文
 	e.GET("/v1/post/:id", v1.GetPost)                    // 贴文详情
+	e.GET("/v1/recommend/:city", v1.RecommendPost)       // 首页推荐贴文
 	e.GET("/v1/post/:id/comments", v1.GetCommentsByPost) // 获取贴文评论
 
 	e.POST("/v1/comment", v1.AddComment) // 发表留言
