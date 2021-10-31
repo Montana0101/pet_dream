@@ -13,5 +13,6 @@ type User struct {
 	Openid    *string  `json:"openid"`
 	Code      string   `json:"code"`
 	City      *string  `json:"city"`
+	District  *string  `json:"district"`
 	AvatarUrl *string  `json:"avatar_url"`
 }

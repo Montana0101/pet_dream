@@ -22,6 +22,7 @@ func AddUser(c *gin.Context) {
 
 	response, err := http.Get("https://api.weixin.qq.com/sns/jscode2session?appid=" + config.Appid +
 		"&secret=" + config.Secret + "&js_code=" + user.Code + "&grant_type=authorization_code")
+
 	if err != nil || response.StatusCode != http.StatusOK {
 		c.Status(http.StatusServiceUnavailable)
 		return
@@ -36,28 +37,40 @@ func AddUser(c *gin.Context) {
 	}
 
 	if wechatLogin.Errcode == 0 && wechatLogin.Openid != "" {
-		c.JSON(200, gin.H{
-			"success": 1,
-			"message": "授权登陆成功",
-			"data":    wechatLogin,
-		})
 		// 查找该用户是否已注册
-		rows, err := config.DbConn.Query("select * from user where openid = ?;", wechatLogin.Openid)
+		rows, err := config.DbConn.Query("select user.city,user.district from user where openid = ?;",
+			wechatLogin.Openid)
 		if err != nil {
 			println(err.Error())
 		}
 		if rows.Next() {
-			println("已经注册过了")
-		} else {
-			// 尚未注册
-			println("还没注册")
-			//插入数据
-			_, err := config.DbConn.Exec("insert into user(openid,nick_name,avatar_url) values(?,?,?);",
-				wechatLogin.Openid, user.NickName, user.AvatarUrl)
-			if err != nil {
-				println(err.Error())
+			if err := rows.Scan(&user.City, &user.District); err == nil {
+				c.JSON(200, gin.H{
+					"success": 1,
+					"message": "授权登陆成功",
+					"data": gin.H{
+						"city":     user.City,
+						"district": user.District,
+						"openId":   wechatLogin.Openid,
+					},
+				})
 			}
-			println("数据插入成功")
+		} else {
+			//插入数据
+			if _, err := config.DbConn.Exec("insert into user(openid) values(?);",
+				wechatLogin.Openid); err == nil {
+				c.JSON(200, gin.H{
+					"success": 1,
+					"message": "用户注册成功",
+					"data": gin.H{
+						"city":     user.City,
+						"district": user.District,
+						"openId":   wechatLogin.Openid,
+					},
+				})
+			} else {
+				print(err.Error())
+			}
 		}
 	} else {
 		c.JSON(200, gin.H{

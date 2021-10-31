@@ -3,7 +3,9 @@ package v1
 import (
 	"community/config"
 	"community/internal/model"
+	"database/sql"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 // AddPost 发布贴文
@@ -11,16 +13,18 @@ func AddPost(c *gin.Context) {
 	//user_id := c.Param("userId")
 	post := model.Post{}
 	c.BindJSON(&post)
+
 	//校验
-	if post.UserId == nil || post.Title == nil || post.Content == nil {
+	if post.UserId == nil || post.PetId == nil || post.Title == nil || post.Content == nil {
 		c.JSON(400, gin.H{
 			"success": 0,
 			"message": "发布帖子失败，必传参数不能为空"})
 		return
 	}
+
 	//新增
-	_, err := config.DbConn.Exec("insert into post(user_id,title,content) "+
-		"values(?,?,?);", post.UserId, post.Title, post.Content)
+	_, err := config.DbConn.Exec("insert into post(user_id,pet_id,title,content) "+
+		"values(?,?,?,?);", post.UserId, post.PetId, post.Title, post.Content)
 	if err != nil {
 		panic(err.Error())
 		return
@@ -117,37 +121,55 @@ func GetPostsByUser(c *gin.Context) {
 func RecommendPost(c *gin.Context) {
 	post := model.Post{}
 	user := model.User{}
-	city := c.Param("city")
-	//userId := c.Param("userId")
+	//city := c.Param("city")
+	//district := c.Param("district")
+
+	// 分页查询
+	pageNo := c.DefaultQuery("pageNo", "1")
+	pageSize := c.DefaultQuery("pageSize", "10")
+	city := c.DefaultQuery("city", "")
+	// 字符串转数字
+	no, _ := strconv.Atoi(pageNo)
+	size, _ := strconv.Atoi(pageSize)
+	cutNo := (no - 1) * size
+
+	var err error
+	//var rows interface{}
+	//rows := sql.Rows{}
+	var rows *sql.Rows
 	if city == "" {
-		println("城市为空")
-		//return
+		// 查全国
+		rows, err = config.DbConn.Query("select user.id as user_id,user.nick_name,user.city,"+
+			"user.district,post.id as post_id,post.title,post.content from post left join user "+
+			"on post.user_id = user.id order by post.create_time desc limit ?,?;", cutNo, pageSize)
+		print("走到这里")
 	} else {
-		println("用户有id")
+		print("啦啦啦")
+		// 查所在城市
+		rows, err = config.DbConn.Query("select * from (select user.id as user_id,user.nick_name,user.city,"+
+			"user.district,post.id as post_id,post.title,post.content from post left join user "+
+			"on post.user_id = user.id order by post.create_time desc) as xx where xx.city = ? limit ?,?;", city, cutNo, pageSize)
 	}
-
-	rows, err := config.DbConn.Query("select user.id,user.nick_name,post.id,post.title,post.content from user left join post "+
-		"on post.user_id = user.id where user.city = ?;", city)
-
 	if err != nil {
 		println("数据库查询错误", err.Error())
 	}
-
 	var list []interface{}
-
+	count := 0
 	for rows.Next() {
-		err := rows.Scan(&user.Id, &user.NickName, &post.Id, &post.Title, &post.Content)
-		if err != nil {
-			println(err.Error())
-		}
-		if post.Id != nil {
-			list = append(list, gin.H{
-				"userId":   user.Id,
-				"nickname": user.NickName,
-				"postId":   post.Id,
-				"title":    post.Title,
-				"content":  post.Content,
-			})
+		count++
+		if err := rows.Scan(&user.Id, &user.NickName, &user.City, &user.District,
+			&post.Id, &post.Title, &post.Content); err == nil {
+			if post.Id != nil {
+				list = append(list, gin.H{
+					"userId":   user.Id,
+					"nickname": user.NickName,
+					"city":     user.City,
+					"district": user.District,
+					"postId":   post.Id,
+					"title":    post.Title,
+					"content":  post.Content,
+				})
+			}
 		}
 	}
 
@@ -155,5 +177,6 @@ func RecommendPost(c *gin.Context) {
 		"success": 1,
 		"message": city + "的贴文列表请查收~",
 		"data":    list,
+		"count":   count,
 	})
 }

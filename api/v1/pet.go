@@ -2,13 +2,23 @@ package v1
 
 import (
 	"community/config"
+	"community/internal/enum"
 	"community/internal/model"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 )
 
+const (
+//	　　 美国短毛猫 短
+//usShorthair = iota
+//ukShorthair
+)
+
 func BindPet(c *gin.Context) {
+	//print(ukShorthair)
+	//internal.BreedType()
+	print(enum.UkShorthair)
 	pet := model.Pet{}
 	//userId := c.Param("userId")
 	c.BindJSON(&pet)
