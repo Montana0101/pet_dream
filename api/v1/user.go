@@ -38,17 +38,18 @@ func AddUser(c *gin.Context) {
 
 	if wechatLogin.Errcode == 0 && wechatLogin.Openid != "" {
 		// 查找该用户是否已注册
-		rows, err := config.DbConn.Query("select user.city,user.district from user where openid = ?;",
+		rows, err := config.DbConn.Query("select user.Id,user.city,user.district from user where openid = ?;",
 			wechatLogin.Openid)
 		if err != nil {
 			println(err.Error())
 		}
 		if rows.Next() {
-			if err := rows.Scan(&user.City, &user.District); err == nil {
+			if err := rows.Scan(&user.Id, &user.City, &user.District); err == nil {
 				c.JSON(200, gin.H{
 					"success": 1,
 					"message": "授权登陆成功",
 					"data": gin.H{
+						"user_id":  user.Id,
 						"city":     user.City,
 						"district": user.District,
 						"openId":   wechatLogin.Openid,
@@ -56,18 +57,33 @@ func AddUser(c *gin.Context) {
 				})
 			}
 		} else {
+			print(1111111)
 			//插入数据
 			if _, err := config.DbConn.Exec("insert into user(openid) values(?);",
 				wechatLogin.Openid); err == nil {
-				c.JSON(200, gin.H{
-					"success": 1,
-					"message": "用户注册成功",
-					"data": gin.H{
-						"city":     user.City,
-						"district": user.District,
-						"openId":   wechatLogin.Openid,
-					},
-				})
+				rows, err := config.DbConn.Query("select id from user where openid = ?", wechatLogin.Openid)
+				if err == nil {
+					print(2222222222222222222)
+					if rows.Next() {
+
+						u := model.User{}
+						if err := rows.Scan(&u.Id); err == nil {
+							print(333333333333333333)
+
+							c.JSON(200, gin.H{
+								"success": 1,
+								"message": "用户注册成功",
+								"data": gin.H{
+									"user_id":  u.Id,
+									"city":     u.City,
+									"district": u.District,
+									"openId":   wechatLogin.Openid,
+								},
+							})
+						}
+					}
+				}
+
 			} else {
 				print(err.Error())
 			}
