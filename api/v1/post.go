@@ -23,12 +23,33 @@ func AddPost(c *gin.Context) {
 	}
 
 	//新增
-	_, err := config.DbConn.Exec("insert into post(user_id,pet_id,title,content) "+
+	res, err := config.DbConn.Exec("insert into post(user_id,pet_id,title,content) "+
 		"values(?,?,?,?);", post.UserId, post.PetId, post.Title, post.Content)
 	if err != nil {
-		panic(err.Error())
-		return
+		println(err.Error())
 	}
+	// 返回自增id
+	postId, err := res.LastInsertId()
+	print("返回自增id", postId)
+
+	// 判断有资源
+	if len(post.Media) > 0 {
+		for i, _ := range post.Media {
+			//存照片视频
+			if _, err := config.DbConn.Exec("insert into media(url,type,user_id,post_id) values(?,?,?,?)",
+				post.Media[i].Url, post.Media[i].Type, post.UserId, postId); err == nil {
+				print("返回自增dsadsadsid", postId)
+				println("遍历资源到数据库成功咯")
+			} else {
+				println("遍历资源到数据库失败拉", err.Error())
+				c.JSON(200, gin.H{
+					"success": 0,
+					"message": "图片添加失败"})
+				return
+			}
+		}
+	}
+
 	c.JSON(200, gin.H{
 		"success": 1,
 		"message": "数据添加成功"})
@@ -119,8 +140,10 @@ func GetPostsByUser(c *gin.Context) {
 
 // 首页推荐推文
 func RecommendPost(c *gin.Context) {
+	print(111111111111)
 	post := model.Post{}
 	user := model.User{}
+	media := model.Media{}
 	//city := c.Param("city")
 	//district := c.Param("district")
 
@@ -140,10 +163,15 @@ func RecommendPost(c *gin.Context) {
 	if city == "" {
 		// 查全国
 		rows, err = config.DbConn.Query("select user.id as user_id,user.nick_name,user.city,"+
-			"user.district,post.id as post_id,post.title,post.content from post left join user "+
-			"on post.user_id = user.id order by post.create_time desc limit ?,?;", cutNo, pageSize)
+			"user.district,post.id as post_id,post.title,post.content,media.url,media.type from post "+
+			"left join user on post.user_id = user.id left join (select type,id,url,post_id from media group by post_id)"+
+			"as media on post.id = media.post_id order by post.create_time desc limit ?,?;", cutNo, pageSize)
 		print("走到这里")
+		print(222222222222)
+
 	} else {
+		print(333333333333333)
+
 		print("啦啦啦")
 		// 查所在城市
 		rows, err = config.DbConn.Query("select * from (select user.id as user_id,user.nick_name,user.city,"+
@@ -158,16 +186,18 @@ func RecommendPost(c *gin.Context) {
 	for rows.Next() {
 		count++
 		if err := rows.Scan(&user.Id, &user.NickName, &user.City, &user.District,
-			&post.Id, &post.Title, &post.Content); err == nil {
+			&post.Id, &post.Title, &post.Content, &media.Url, &media.Type); err == nil {
 			if post.Id != nil {
 				list = append(list, gin.H{
-					"userId":   user.Id,
-					"nickname": user.NickName,
-					"city":     user.City,
-					"district": user.District,
-					"postId":   post.Id,
-					"title":    post.Title,
-					"content":  post.Content,
+					"userId":    user.Id,
+					"nickname":  user.NickName,
+					"city":      user.City,
+					"district":  user.District,
+					"postId":    post.Id,
+					"title":     post.Title,
+					"content":   post.Content,
+					"mediaUrl":  media.Url,
+					"mediaType": media.Type,
 				})
 			}
 		}

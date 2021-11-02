@@ -9,6 +9,15 @@ type Post struct {
 	Content    *string `json:"content"`
 	CreateTime *string `json:"create_time"`
 	UpdateTime *string `json:"update_time"`
+	Media      []struct {
+		Url  *string `json:"url"`
+		Type *string `json:"type"`
+	} `json:"media"`
+}
+
+type Media struct {
+	Url  *string `json:"url"`
+	Type *string `json:"type"`
 }
 
 // 首页推荐

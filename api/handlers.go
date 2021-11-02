@@ -6,7 +6,6 @@ import (
 )
 
 func Handlers(e *gin.Engine) {
-	//e := gin.New(
 	e.POST("/v1/user", v1.AddUser)
 	e.GET("/v1/user/:userId", v1.GetUser)              // 获取用户及关联的宠物信息
 	e.GET("/v1/user/:userId/posts", v1.GetPostsByUser) // 获取用户贴文

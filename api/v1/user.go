@@ -57,35 +57,22 @@ func AddUser(c *gin.Context) {
 				})
 			}
 		} else {
-			print(1111111)
 			//插入数据
-			if _, err := config.DbConn.Exec("insert into user(openid) values(?);",
+			if res, err := config.DbConn.Exec("insert into user(openid) values(?);",
 				wechatLogin.Openid); err == nil {
-				rows, err := config.DbConn.Query("select id from user where openid = ?", wechatLogin.Openid)
+				userId, err := res.LastInsertId()
 				if err == nil {
-					print(2222222222222222222)
-					if rows.Next() {
-
-						u := model.User{}
-						if err := rows.Scan(&u.Id); err == nil {
-							print(333333333333333333)
-
-							c.JSON(200, gin.H{
-								"success": 1,
-								"message": "用户注册成功",
-								"data": gin.H{
-									"user_id":  u.Id,
-									"city":     u.City,
-									"district": u.District,
-									"openId":   wechatLogin.Openid,
-								},
-							})
-						}
-					}
+					c.JSON(200, gin.H{
+						"success": 1,
+						"message": "用户注册成功",
+						"data": gin.H{
+							"user_id":  userId,
+							"city":     user.City,
+							"district": user.District,
+							"openId":   wechatLogin.Openid,
+						},
+					})
 				}
-
-			} else {
-				print(err.Error())
 			}
 		}
 	} else {
