@@ -166,17 +166,13 @@ func RecommendPost(c *gin.Context) {
 			"user.district,post.id as post_id,post.title,post.content,media.url,media.type from post "+
 			"left join user on post.user_id = user.id left join (select type,id,url,post_id from media group by post_id)"+
 			"as media on post.id = media.post_id order by post.create_time desc limit ?,?;", cutNo, pageSize)
-		print("走到这里")
-		print(222222222222)
-
 	} else {
-		print(333333333333333)
-
-		print("啦啦啦")
 		// 查所在城市
-		rows, err = config.DbConn.Query("select * from (select user.id as user_id,user.nick_name,user.city,"+
-			"user.district,post.id as post_id,post.title,post.content from post left join user "+
-			"on post.user_id = user.id order by post.create_time desc) as xx where xx.city = ? limit ?,?;", city, cutNo, pageSize)
+		rows, err = config.DbConn.Query("select user.id as user_id,user.nick_name,user.city,"+
+			"user.district,post.id as post_id,post.title,post.content,media.url,media.type from post "+
+			"inner join user on post.user_id = user.id and user.city=?"+
+			"left join (select type,id,url,post_id from media group by post_id)"+
+			"as media on post.id = media.post_id order by post.create_time desc limit ?,?;", city, cutNo, pageSize)
 	}
 	if err != nil {
 		println("数据库查询错误", err.Error())
