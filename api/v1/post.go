@@ -176,6 +176,7 @@ func RecommendPost(c *gin.Context) {
 	}
 	if err != nil {
 		println("数据库查询错误", err.Error())
+
 	}
 	var list []interface{}
 	count := 0

@@ -92,9 +92,9 @@ func PutLocation(c *gin.Context) {
 		println("缺少必要参数")
 		return
 	}
-	rows, err := config.DbConn.Exec("update user set longitude=?,latitude=?,city=? "+
+	rows, err := config.DbConn.Exec("update user set longitude=?,latitude=?,city=?,district=? "+
 		"where openid = ?;",
-		user.Longitude, user.Latitude, user.City, user.Openid)
+		user.Longitude, user.Latitude, user.City, user.District, user.Openid)
 	if err != nil {
 		println(err.Error())
 	}

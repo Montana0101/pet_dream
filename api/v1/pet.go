@@ -16,38 +16,61 @@ const (
 )
 
 func BindPet(c *gin.Context) {
-	//print(ukShorthair)
-	//internal.BreedType()
 	print(enum.UkShorthair)
 	pet := model.Pet{}
-	//userId := c.Param("userId")
 	c.BindJSON(&pet)
 	//校验必传参数
-	if pet.UserId == nil || pet.Gender == nil || pet.Name == nil {
+	if pet.UserId == nil || pet.Gender == nil || pet.Name == nil || pet.Breed == nil {
 		fmt.Println("绑定宠物失败*_*")
-		c.JSON(400, gin.H{
-			"success": "false",
+		c.JSON(200, gin.H{
+			"success": 0,
 			"message": "绑定宠物失败，请核对传入参数",
 		})
 		return
 	}
 
 	//插入数据
-	_, err := config.DbConn.Exec("insert into pet(user_id,name,age,gender) values(?,?,?,?);",
-		pet.UserId, pet.Name, pet.Age, pet.Gender)
+	_, err := config.DbConn.Exec("insert into pet(user_id,name,age,gender,breed,intro) values(?,?,?,?,?,?);",
+		pet.UserId, pet.Name, pet.Age, pet.Gender, pet.Breed, pet.Intro)
 	if err != nil {
 		log.Panic(err.Error())
 		return
 	}
 	fmt.Println("叮~成功绑定了一条宠物记录≧◠◡◠≦")
 	c.JSON(200, gin.H{
-		"success": "200",
+		"success": 1,
 		"message": "绑定宠物成功",
 		"data": gin.H{
 			"name":   pet.Name,
 			"age":    pet.Age,
 			"gender": pet.Gender,
 		},
+	})
+}
+
+// 用户关联宠物列表
+func BoundPets(c *gin.Context) {
+	userId := c.Param("id")
+	pet := model.Pet{}
+	rows, err := config.DbConn.Query("select id,name from pet where user_id = ?", userId)
+	if err != nil {
+		println(err.Error())
+		return
+	}
+	var list []interface{}
+
+	for rows.Next() {
+		if err := rows.Scan(&pet.Id, &pet.Name); err == nil {
+			list = append(list, gin.H{
+				"id":   pet.Id,
+				"name": pet.Name,
+			})
+		}
+	}
+	c.JSON(200, gin.H{
+		"success": 1,
+		"message": "返回用户关联宠物信息成功",
+		"data":    list,
 	})
 }
 

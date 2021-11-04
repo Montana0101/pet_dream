@@ -11,9 +11,10 @@ func Handlers(e *gin.Engine) {
 	e.GET("/v1/user/:userId/posts", v1.GetPostsByUser) // 获取用户贴文
 	e.PUT("/v1/user/location", v1.PutLocation)         // 更新用户定位
 
-	e.POST("/v1/pet", v1.BindPet)      // 绑定宠物
-	e.DELETE("/v1/pet/:id", v1.DelPet) // 删除宠物信息
-	e.PUT("/v1/pet/:id", v1.PutPet)    // 更新宠物
+	e.POST("/v1/pet", v1.BindPet)            // 绑定宠物
+	e.DELETE("/v1/pet/:id", v1.DelPet)       // 删除宠物信息
+	e.PUT("/v1/pet/:id", v1.PutPet)          // 更新宠物
+	e.GET("/v1/user/pets/:id", v1.BoundPets) // 用户关联宠物信息
 
 	e.POST("/v1/post", v1.AddPost)                       // 发布贴文
 	e.GET("/v1/post/:id", v1.GetPost)                    // 贴文详情
