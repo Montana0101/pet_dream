@@ -38,13 +38,14 @@ func AddUser(c *gin.Context) {
 
 	if wechatLogin.Errcode == 0 && wechatLogin.Openid != "" {
 		// 查找该用户是否已注册
-		rows, err := config.DbConn.Query("select user.Id,user.city,user.district from user where openid = ?;",
+		rows, err := config.DbConn.Query("select user.Id,user.city,user.district," +
+			"user.nick_name,user.avatar_url from user where openid = ?;",
 			wechatLogin.Openid)
 		if err != nil {
 			println(err.Error())
 		}
 		if rows.Next() {
-			if err := rows.Scan(&user.Id, &user.City, &user.District); err == nil {
+			if err := rows.Scan(&user.Id, &user.City, &user.District,&user.NickName,&user.AvatarUrl); err == nil {
 				c.JSON(200, gin.H{
 					"success": 1,
 					"message": "授权登陆成功",
@@ -53,6 +54,8 @@ func AddUser(c *gin.Context) {
 						"city":     user.City,
 						"district": user.District,
 						"openId":   wechatLogin.Openid,
+						"avatar_url":user.AvatarUrl,
+						"nick_name":user.NickName,
 					},
 				})
 			}
@@ -70,6 +73,8 @@ func AddUser(c *gin.Context) {
 							"city":     user.City,
 							"district": user.District,
 							"openId":   wechatLogin.Openid,
+							"avatar_url":user.AvatarUrl,
+							"nick_name":user.NickName,
 						},
 					})
 				}
@@ -86,15 +91,12 @@ func AddUser(c *gin.Context) {
 
 // 记录地址信息
 func PutLocation(c *gin.Context) {
+	userId := c.Param("userId")
 	user := model.User{}
 	c.BindJSON(&user)
-	if user.Longitude == nil || user.Latitude == nil || user.City == nil || user.Openid == nil {
-		println("缺少必要参数")
-		return
-	}
 	rows, err := config.DbConn.Exec("update user set longitude=?,latitude=?,city=?,district=? "+
-		"where openid = ?;",
-		user.Longitude, user.Latitude, user.City, user.District, user.Openid)
+		"where id = ?;",
+		user.Longitude, user.Latitude, user.City, user.District, userId)
 	if err != nil {
 		println(err.Error())
 	}
@@ -112,6 +114,34 @@ func PutLocation(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"success": 0,
 			"message": "哇 ! 用户地址变更失败（┬＿┬）"})
+	}
+}
+
+// 更新微信头像和昵称
+func PutUserinfo(c *gin.Context) {
+	userId := c.Param("userId")
+	user := model.User{}
+	c.BindJSON(&user)
+	rows, err := config.DbConn.Exec("update user set nick_name=?,avatar_url=? "+
+		"where id = ?;",
+		user.NickName, user.AvatarUrl, userId)
+	if err != nil {
+		println(err.Error())
+	}
+
+	result, err := rows.RowsAffected()
+	if err != nil {
+		println(err.Error())
+	}
+
+	if result == 1 {
+		c.JSON(200, gin.H{
+			"success": 1,
+			"message": "叮 ! 用户微信昵称和头像已变更 ≧◠◡◠≦"})
+	} else {
+		c.JSON(200, gin.H{
+			"success": 0,
+			"message": "哇 ! 用户微信昵称和头像失败咯（┬＿┬）"})
 	}
 }
 

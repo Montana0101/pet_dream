@@ -9,7 +9,8 @@ func Handlers(e *gin.Engine) {
 	e.POST("/v1/user", v1.AddUser)
 	e.GET("/v1/user/:userId", v1.GetUser)              // 获取用户及关联的宠物信息
 	e.GET("/v1/user/:userId/posts", v1.GetPostsByUser) // 获取用户贴文
-	e.PUT("/v1/user/location", v1.PutLocation)         // 更新用户定位
+	e.PUT("/v1/location/:userId", v1.PutLocation)      // 更新用户定位
+	e.PUT("/v1/userinfo/:userId", v1.PutUserinfo)      // 更新用户昵称和头像
 
 	e.POST("/v1/pet", v1.BindPet)            // 绑定宠物
 	e.DELETE("/v1/pet/:id", v1.DelPet)       // 删除宠物信息

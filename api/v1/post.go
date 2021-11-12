@@ -52,7 +52,10 @@ func AddPost(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"success": 1,
-		"message": "数据添加成功"})
+		"message": "数据添加成功",
+		"data": gin.H{
+			"id": postId,
+		}})
 }
 
 // GetPost 贴文详情
@@ -67,7 +70,7 @@ func GetPost(c *gin.Context) {
 	}
 
 	rows, err := config.DbConn.Query("select post.id,post.title,post.content,post.user_id,"+
-		"post.create_time,user.nick_name "+
+		"post.create_time,user.nick_name,user.city,user.avatar_url "+
 		"from post left join user on post.user_id = user.id where post.id = (?)", postId)
 
 	if err != nil {
@@ -76,7 +79,8 @@ func GetPost(c *gin.Context) {
 	}
 
 	if rows.Next() {
-		err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.UserId, &post.CreateTime, &user.NickName)
+		err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.UserId, &post.CreateTime,
+			&user.NickName, &user.City,&user.AvatarUrl)
 		if err != nil {
 			println("数据返回错误", err.Error())
 			return
@@ -85,11 +89,14 @@ func GetPost(c *gin.Context) {
 			"success": 1,
 			"message": "成功获取贴文",
 			"data": gin.H{
-				"id":          postId,
-				"title":       post.Title,
-				"content":     post.Content,
-				"user_id":     post.UserId,
-				"create_time": post.CreateTime}})
+				"id":         postId,
+				"title":      post.Title,
+				"content":    post.Content,
+				"userId":     post.UserId,
+				"nickName":   user.NickName,
+				"city":       user.City,
+				"avatarUrl":user.AvatarUrl,
+				"createTime": post.CreateTime}})
 	} else {
 		c.JSON(200, gin.H{
 			"success": 0,
@@ -140,7 +147,6 @@ func GetPostsByUser(c *gin.Context) {
 
 // 首页推荐推文
 func RecommendPost(c *gin.Context) {
-	print(111111111111)
 	post := model.Post{}
 	user := model.User{}
 	media := model.Media{}
