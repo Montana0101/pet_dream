@@ -62,6 +62,7 @@ func AddPost(c *gin.Context) {
 func GetPost(c *gin.Context) {
 	post := model.Post{}
 	user := model.User{}
+	pet := model.Pet{}
 	postId := c.Param("id")
 
 	if postId == "" {
@@ -70,17 +71,38 @@ func GetPost(c *gin.Context) {
 	}
 
 	rows, err := config.DbConn.Query("select post.id,post.title,post.content,post.user_id,"+
-		"post.create_time,user.nick_name,user.city,user.avatar_url "+
-		"from post left join user on post.user_id = user.id where post.id = (?)", postId)
+		"post.create_time,user.nick_name,user.city,user.avatar_url,pet.name,pet.age,pet.gender,"+
+		"pet.breed "+
+		"from post left join user on post.user_id = user.id left join pet on post.pet_id=pet.id "+
+		"where post.id = (?)", postId)
 
 	if err != nil {
-		println("数据库查询错误", err.Error())
+		println("数据库查询贴文错误", err.Error())
 		return
+	}
+
+	imgs, err := config.DbConn.Query("select url,type from media where post_id = ?", postId)
+	if err != nil {
+		println("数据库查询图片错误", err.Error())
+		return
+	}
+
+	var arr []interface{}
+	media := model.Media{}
+	for imgs.Next() {
+		err := imgs.Scan(&media.Url, &media.Type)
+		if err != nil {
+			println(err.Error())
+		}
+		arr = append(arr, gin.H{
+			"url":  media.Url,
+			"type": media.Type,
+		})
 	}
 
 	if rows.Next() {
 		err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.UserId, &post.CreateTime,
-			&user.NickName, &user.City,&user.AvatarUrl)
+			&user.NickName, &user.City, &user.AvatarUrl, &pet.Name, &pet.Age, &pet.Gender, &pet.Breed)
 		if err != nil {
 			println("数据返回错误", err.Error())
 			return
@@ -95,8 +117,15 @@ func GetPost(c *gin.Context) {
 				"userId":     post.UserId,
 				"nickName":   user.NickName,
 				"city":       user.City,
-				"avatarUrl":user.AvatarUrl,
-				"createTime": post.CreateTime}})
+				"avatarUrl":  user.AvatarUrl,
+				"createTime": post.CreateTime,
+				"petInfo": gin.H{
+					"name":   pet.Name,
+					"gender": pet.Gender,
+					"breed":  pet.Breed,
+					"age":    pet.Age,
+				},
+				"images": arr}})
 	} else {
 		c.JSON(200, gin.H{
 			"success": 0,
