@@ -9,5 +9,6 @@ type Pet struct {
 	Gender *int    `json:"gender"'`
 	Breed  *int    `json:"breed"`
 	Intro  *string `json:"intro"`
+	Photo  *string `json:"photo"`
 	//source float64 `json:"source"`
 }

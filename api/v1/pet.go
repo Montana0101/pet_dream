@@ -30,8 +30,8 @@ func BindPet(c *gin.Context) {
 	}
 
 	//插入数据
-	_, err := config.DbConn.Exec("insert into pet(user_id,name,age,gender,breed,intro) values(?,?,?,?,?,?);",
-		pet.UserId, pet.Name, pet.Age, pet.Gender, pet.Breed, pet.Intro)
+	_, err := config.DbConn.Exec("insert into pet(user_id,name,age,gender,breed,intro,photo) values(?,?,?,?,?,?,?);",
+		pet.UserId, pet.Name, pet.Age, pet.Gender, pet.Breed, pet.Intro, pet.Photo)
 	if err != nil {
 		log.Panic(err.Error())
 		return
@@ -44,6 +44,7 @@ func BindPet(c *gin.Context) {
 			"name":   pet.Name,
 			"age":    pet.Age,
 			"gender": pet.Gender,
+			"photo":  pet.Photo,
 		},
 	})
 }

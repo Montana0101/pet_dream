@@ -72,7 +72,7 @@ func GetPost(c *gin.Context) {
 
 	rows, err := config.DbConn.Query("select post.id,post.title,post.content,post.user_id,"+
 		"post.create_time,user.nick_name,user.city,user.avatar_url,pet.name,pet.age,pet.gender,"+
-		"pet.breed "+
+		"pet.breed,pet.photo "+
 		"from post left join user on post.user_id = user.id left join pet on post.pet_id=pet.id "+
 		"where post.id = (?)", postId)
 
@@ -102,7 +102,8 @@ func GetPost(c *gin.Context) {
 
 	if rows.Next() {
 		err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.UserId, &post.CreateTime,
-			&user.NickName, &user.City, &user.AvatarUrl, &pet.Name, &pet.Age, &pet.Gender, &pet.Breed)
+			&user.NickName, &user.City, &user.AvatarUrl, &pet.Name, &pet.Age, &pet.Gender,
+			&pet.Breed, &pet.Photo)
 		if err != nil {
 			println("数据返回错误", err.Error())
 			return
@@ -124,6 +125,7 @@ func GetPost(c *gin.Context) {
 					"gender": pet.Gender,
 					"breed":  pet.Breed,
 					"age":    pet.Age,
+					"photo":  pet.Photo,
 				},
 				"images": arr}})
 	} else {
