@@ -10,5 +10,5 @@ func main() {
 	engine := gin.New()
 	e = engine
 	api.Handlers(e)
-	engine.Run(":7777") // listen and serve on 0.0.
+	engine.Run("0.0.0.0:7777") // listen and serve on 0.0.
 }

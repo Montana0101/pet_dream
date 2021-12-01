@@ -1,6 +1,6 @@
 package config
 
 var (
-	Appid  string = "wx44c041322de8b409"
-	Secret string = "d023de0dcd56c19d3979a17c8462f0d2"
+	Appid  string = "wxb09c5513a57689e5"
+	Secret string = "9c3e7ec3c3d7bdf07c112d9188d2c578"
 )

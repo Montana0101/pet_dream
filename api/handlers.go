@@ -24,5 +24,6 @@ func Handlers(e *gin.Engine) {
 	e.POST("/v1/media", v1.SaveImg)
 	e.POST("/v1/tag", v1.AddTag) // 新增标签
 
-	e.POST("/v1/comment", v1.AddComment) // 发表留言
+	e.POST("/v1/comment", v1.AddComment)         // 发表留言
+	e.POST("/v1/comment/reply", v1.ReplyComment) // 回复评论
 }

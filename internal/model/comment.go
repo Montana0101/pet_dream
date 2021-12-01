@@ -9,4 +9,6 @@ type Comment struct {
 	CreateTime *string `json:"create_time"`
 	UpdateTime *string `json:"update_time"`
 	Source     *int    `json:"source"`
+	ReplyId    *int    `json:"reply_id"`
+	ParentId   int     `json:"parent_id"`
 }
