@@ -100,7 +100,6 @@ func PutLocation(c *gin.Context) {
 	if err != nil {
 		println(err.Error())
 	}
-
 	result, err := rows.RowsAffected()
 	if err != nil {
 		println(err.Error())

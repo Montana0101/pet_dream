@@ -4,6 +4,7 @@ import (
 	"community/config"
 	"community/internal/model"
 	"database/sql"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"strconv"
 )
@@ -181,12 +182,13 @@ func RecommendPost(c *gin.Context) {
 	post := model.Post{}
 	user := model.User{}
 	media := model.Media{}
-	//city := c.Param("city")
+	pet := model.Pet{}
 	//district := c.Param("district")
 
 	// 分页查询
 	pageNo := c.DefaultQuery("pageNo", "1")
 	pageSize := c.DefaultQuery("pageSize", "10")
+	gender := c.DefaultQuery("gender", "")
 	city := c.DefaultQuery("city", "")
 	// 字符串转数字
 	no, _ := strconv.Atoi(pageNo)
@@ -198,18 +200,32 @@ func RecommendPost(c *gin.Context) {
 	//rows := sql.Rows{}
 	var rows *sql.Rows
 	if city == "" {
+		var sql = "select user.id as user_id,user.nick_name,user.city," +
+			"user.district,post.id as post_id,post.title,post.content,media.url,media.type," +
+			"pet.name,pet.age,pet.gender from post " +
+			"left join user on post.user_id = user.id left join (select type,id,url,post_id from media group by post_id)" +
+			"as media on post.id = media.post_id " +
+			"left join pet on post.pet_id = pet.id " +
+			"where 1=1 %s order by post.create_time desc limit ?,?;"
+		if gender != "" {
+			//sql = fmt.Sprintf(sql)
+			sql = fmt.Sprintf(sql, "and pet.gender="+gender)
+			println("打印下sql", sql)
+		} else {
+			sql = fmt.Sprintf(sql, "and 2=2")
+		}
+
 		// 查全国
-		rows, err = config.DbConn.Query("select user.id as user_id,user.nick_name,user.city,"+
-			"user.district,post.id as post_id,post.title,post.content,media.url,media.type from post "+
-			"left join user on post.user_id = user.id left join (select type,id,url,post_id from media group by post_id)"+
-			"as media on post.id = media.post_id order by post.create_time desc limit ?,?;", cutNo, pageSize)
+		rows, err = config.DbConn.Query(sql, cutNo, pageSize)
 	} else {
 		// 查所在城市
 		rows, err = config.DbConn.Query("select user.id as user_id,user.nick_name,user.city,"+
-			"user.district,post.id as post_id,post.title,post.content,media.url,media.type from post "+
+			"user.district,post.id as post_id,post.title,post.content,media.url,media.type,"+
+			"pet.name,pet.age,pet.gender from post "+
 			"inner join user on post.user_id = user.id and user.city=?"+
 			"left join (select type,id,url,post_id from media group by post_id)"+
-			"as media on post.id = media.post_id order by post.create_time desc limit ?,?;", city, cutNo, pageSize)
+			"as media on post.id = media.post_id "+
+			"left join pet on post.pet_id=pet.id order by post.create_time desc limit ?,?;", city, cutNo, pageSize)
 	}
 	if err != nil {
 		println("数据库查询错误", err.Error())
@@ -217,10 +233,12 @@ func RecommendPost(c *gin.Context) {
 	}
 	var list []interface{}
 	count := 0
+
 	for rows.Next() {
 		count++
 		if err := rows.Scan(&user.Id, &user.NickName, &user.City, &user.District,
-			&post.Id, &post.Title, &post.Content, &media.Url, &media.Type); err == nil {
+			&post.Id, &post.Title, &post.Content, &media.Url, &media.Type,
+			&pet.Name, &pet.Age, &pet.Gender); err == nil {
 			if post.Id != nil {
 				list = append(list, gin.H{
 					"userId":    user.Id,
@@ -232,6 +250,9 @@ func RecommendPost(c *gin.Context) {
 					"content":   post.Content,
 					"mediaUrl":  media.Url,
 					"mediaType": media.Type,
+					"petName":   pet.Name,
+					"petAge":    pet.Age,
+					"petGender": pet.Gender,
 				})
 			}
 		}

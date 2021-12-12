@@ -77,9 +77,7 @@ func BoundPets(c *gin.Context) {
 
 // 删除宠物记录
 func DelPet(c *gin.Context) {
-	//userId := c.Param("userId")
 	id := c.Param("id")
-	//_, err := config.DbConn.Exec("delete from pet where user_id = (?) and id = (?);", userId, id)
 	rows, err := config.DbConn.Exec("update pet set visible = 0 where id = (?) ;", id)
 	if err != nil {
 		fmt.Print(err.Error())
