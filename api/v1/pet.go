@@ -53,7 +53,7 @@ func BindPet(c *gin.Context) {
 func BoundPets(c *gin.Context) {
 	userId := c.Param("id")
 	pet := model.Pet{}
-	rows, err := config.DbConn.Query("select id,name from pet where user_id = ?", userId)
+	rows, err := config.DbConn.Query("select id,name,photo from pet where user_id = ?", userId)
 	if err != nil {
 		println(err.Error())
 		return
@@ -61,10 +61,11 @@ func BoundPets(c *gin.Context) {
 	var list []interface{}
 
 	for rows.Next() {
-		if err := rows.Scan(&pet.Id, &pet.Name); err == nil {
+		if err := rows.Scan(&pet.Id, &pet.Name, &pet.Photo); err == nil {
 			list = append(list, gin.H{
-				"id":   pet.Id,
-				"name": pet.Name,
+				"id":     pet.Id,
+				"name":   pet.Name,
+				"avatar": pet.Photo,
 			})
 		}
 	}

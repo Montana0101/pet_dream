@@ -3,7 +3,6 @@ package v1
 import (
 	"community/config"
 	"community/internal/model"
-	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,8 +43,9 @@ func ReplyComment(c *gin.Context) {
 			return
 		}
 	} else {
-		if _, err := config.DbConn.Exec("insert into comment(user_id,post_id,parent_id,reply_id,content,source) "+
-			"values(?,?,?,?,?,?);", comment.UserId, comment.PostId, comment.ParentId, comment.ReplyId, comment.Content, comment.Source); err != nil {
+		if _, err := config.DbConn.Exec("insert into comment(user_id,post_id,parent_id,reply_id,reply_name,content,source) "+
+			"values(?,?,?,?,?,?,?);", comment.UserId, comment.PostId, comment.ParentId, comment.ReplyId,
+			comment.ReplyName, comment.Content, comment.Source); err != nil {
 			println(err.Error())
 			return
 		}
@@ -61,10 +61,11 @@ func GetCommentsByPost(c *gin.Context) {
 	comment := model.Comment{}
 	user := model.User{}
 	postId := c.Param("id")
-	rows, err := config.DbConn.Query("select comment.id,comment.reply_id,comment.content,"+
-		"comment.reply_id,IFNULL(comment.parent_id,0),comment.source,comment.create_time, "+
+	rows, err := config.DbConn.Query("select comment.id,comment.reply_id,comment.reply_name,comment.content,"+
+		"IFNULL(comment.parent_id,0),comment.source,comment.create_time, "+
 		"user.nick_name,user.avatar_url from comment left join user on comment.user_id = user.id "+
 		"where comment.post_id = ? and user.avatar_url is not null;", postId)
+
 	if err != nil {
 		println(err.Error())
 	}
@@ -72,17 +73,16 @@ func GetCommentsByPost(c *gin.Context) {
 	var list []interface{}
 
 	for rows.Next() {
-		err := rows.Scan(&comment.Id, &comment.ReplyId, &comment.Content, &comment.ReplyId,
+		err := rows.Scan(&comment.Id, &comment.ReplyId, &comment.ReplyName, &comment.Content,
 			&comment.ParentId, &comment.Source,
 			&comment.CreateTime, &user.NickName, &user.AvatarUrl)
 
 		if err != nil {
-			print(111111111111111)
 			println(err.Error())
 			return
 		}
 
-		if comment.Id != nil {
+		if comment.Id != 0 {
 			list = append(list, map[string]interface{}{
 				"id":          comment.Id,
 				"content":     comment.Content,
@@ -92,6 +92,7 @@ func GetCommentsByPost(c *gin.Context) {
 				"avatar_url":  user.AvatarUrl,
 				"parent_id":   comment.ParentId,
 				"reply_id":    comment.ReplyId,
+				"reply_name":  comment.ReplyName,
 			})
 		}
 	}
@@ -104,19 +105,19 @@ func GetCommentsByPost(c *gin.Context) {
 		res, _ := list[i].(map[string]interface{})
 
 		if res["parent_id"] == 0 {
-			list1 = append(list1, gin.H{
+			list1 = append(list1, map[string]interface{}{
 				"id":          res["id"],
 				"content":     res["content"],
 				"source":      res["source"],
 				"create_time": res["create_time"],
 				"nick_name":   res["nick_name"],
 				"avatar_url":  res["avatar_url"],
-				"parent_id":   res["parent_id"],
 				"reply_id":    res["reply_id"],
+				"reply_name":  res["reply_name"],
+				"data":        []interface{}{},
 			})
 		} else {
-
-			list2 = append(list2, gin.H{
+			list2 = append(list2, map[string]interface{}{
 				"id":          res["id"],
 				"content":     res["content"],
 				"source":      res["source"],
@@ -125,29 +126,24 @@ func GetCommentsByPost(c *gin.Context) {
 				"avatar_url":  res["avatar_url"],
 				"parent_id":   res["parent_id"],
 				"reply_id":    res["reply_id"],
+				"reply_name":  res["reply_name"],
 			})
 		}
 	}
 
 	for i, _ := range list1 {
-		r1, _ := list1[i].(map[string]interface{})
-		var arr []interface{}
+		id := list1[i].(map[string]interface{})["id"]
+		var data []interface{}
+		if len(list2) > 0 {
+			for i2, _ := range list2 {
+				parentId := list2[i2].(map[string]interface{})["parent_id"]
 
-		for i2, _ := range list2 {
-			r2, _ := list2[i2].(map[string]interface{})
-
-			if r2["parent_id"] == r1["id"] {
-				fmt.Printf("%v \n", "第三代就看撒")
-				arr = append(arr, gin.H{
-					"asd": "的撒",
-				})
+				if parentId == id {
+					data = append(data, list2[i2])
+				}
 			}
 		}
-		//r1["xx"] = make(map[string]string)
-		//r1["xx"] = "但是那就快点撒"
-		//r1 := make(map[string]map[int]int)
-
-		fmt.Printf("%v \n", r1)
+		list1[i].(map[string]interface{})["data"] = data
 	}
 
 	c.JSON(200, gin.H{

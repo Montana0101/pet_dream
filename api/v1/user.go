@@ -4,7 +4,6 @@ import (
 	"community/config"
 	"community/internal/model"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"log"
@@ -31,31 +30,31 @@ func AddUser(c *gin.Context) {
 
 	var wechatLogin model.WechatLogin
 	if err := json.Unmarshal([]byte(reader), &wechatLogin); err == nil {
-		fmt.Println("==============json str 转map=======================")
-		fmt.Println(string(reader))
-		fmt.Println(wechatLogin)
+		//fmt.Println("==============json str 转map=======================")
+		//fmt.Println(string(reader))
+		//fmt.Println(wechatLogin)
 	}
 
 	if wechatLogin.Errcode == 0 && wechatLogin.Openid != "" {
 		// 查找该用户是否已注册
-		rows, err := config.DbConn.Query("select user.Id,user.city,user.district," +
+		rows, err := config.DbConn.Query("select user.Id,user.city,user.district,"+
 			"user.nick_name,user.avatar_url from user where openid = ?;",
 			wechatLogin.Openid)
 		if err != nil {
 			println(err.Error())
 		}
 		if rows.Next() {
-			if err := rows.Scan(&user.Id, &user.City, &user.District,&user.NickName,&user.AvatarUrl); err == nil {
+			if err := rows.Scan(&user.Id, &user.City, &user.District, &user.NickName, &user.AvatarUrl); err == nil {
 				c.JSON(200, gin.H{
 					"success": 1,
 					"message": "授权登陆成功",
 					"data": gin.H{
-						"user_id":  user.Id,
-						"city":     user.City,
-						"district": user.District,
-						"openId":   wechatLogin.Openid,
-						"avatar_url":user.AvatarUrl,
-						"nick_name":user.NickName,
+						"user_id":    user.Id,
+						"city":       user.City,
+						"district":   user.District,
+						"openId":     wechatLogin.Openid,
+						"avatar_url": user.AvatarUrl,
+						"nick_name":  user.NickName,
 					},
 				})
 			}
@@ -69,12 +68,12 @@ func AddUser(c *gin.Context) {
 						"success": 1,
 						"message": "用户注册成功",
 						"data": gin.H{
-							"user_id":  userId,
-							"city":     user.City,
-							"district": user.District,
-							"openId":   wechatLogin.Openid,
-							"avatar_url":user.AvatarUrl,
-							"nick_name":user.NickName,
+							"user_id":    userId,
+							"city":       user.City,
+							"district":   user.District,
+							"openId":     wechatLogin.Openid,
+							"avatar_url": user.AvatarUrl,
+							"nick_name":  user.NickName,
 						},
 					})
 				}

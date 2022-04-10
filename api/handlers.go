@@ -19,8 +19,14 @@ func Handlers(e *gin.Engine) {
 
 	e.POST("/v1/post", v1.AddPost)                       // 发布贴文
 	e.GET("/v1/post/:id", v1.GetPost)                    // 贴文详情
-	e.GET("/v1/recommend", v1.RecommendPost)             // 首页推荐贴文
+	e.GET("/v1/post/recommend", v1.RecommendPost)        // 首页推荐贴文
 	e.GET("/v1/post/:id/comments", v1.GetCommentsByPost) // 获取贴文评论
+
+	e.POST("/v1/diary", v1.AddDiary)                // 发布贴文
+	e.GET("/v1/diary/:id", v1.GetDiary)             // 贴文详情
+	e.GET("/v1/diary/recommend", v1.RecommendDiary) // 首页推荐日志列表
+	//e.GET("/v1/diary/:id/comments", v1.GetCommentsByDiary) // 获取贴文评论
+
 	e.POST("/v1/media", v1.SaveImg)
 	e.POST("/v1/tag", v1.AddTag) // 新增标签
 

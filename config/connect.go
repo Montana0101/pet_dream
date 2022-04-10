@@ -13,7 +13,7 @@ var (
 
 func init() {
 	//连接数据库
-	constr := "montana:Qb141592@tcp(rm-bp1076k66l7izw64nmo.mysql.rds.aliyuncs.com:3306)/pet_wechat?charset=utf8mb4"
+	constr := "montana:@141592qb@tcp(rm-bp1076k66l7izw64nmo.mysql.rds.aliyuncs.com:3306)/pet_wechat?charset=utf8mb4"
 	//打开连接
 	db, err := sql.Open("mysql", constr) //返回mysql实例db
 	if err != nil {
