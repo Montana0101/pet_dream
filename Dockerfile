@@ -8,4 +8,4 @@ WORKDIR /app
 
 COPY --from=builder /app/cmd/main .
 
-CMD ["/app/cmd/main"]
+CMD ["/app/main"]
